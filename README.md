@@ -4,7 +4,7 @@ This repo contains all the GitHub actions for automating tasks and whatnot
 
 ## Available Actions
 
-### [TODO to Issues](docs/actions/todo-to-issues.md)
+### [TODO to Issues](docs/todo-to-issues.md)
 
 Automatically creates GitHub issues from a `TODO.md` file when pushed to the main branch.
 
