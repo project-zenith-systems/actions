@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Process TODO file
-        uses: project-zenith-systems/playground/.github/actions/todo-to-issues@main
+        uses: project-zenith-systems/actions/.github/actions/todo-to-issues@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
