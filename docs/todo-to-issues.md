@@ -80,7 +80,7 @@ jobs:
 
 ## Example TODO.md
 
-See [TODO.md.example](../../.github/actions/todo-to-issues/TODO.md.example) for a complete example.
+See [TODO.example.md](../../.github/actions/todo-to-issues/TODO.example.md) for a complete example.
 
 ```markdown
 ## Add user authentication
