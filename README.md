@@ -15,4 +15,4 @@ Automatically creates GitHub issues from a `TODO.md` file when pushed to the mai
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-See [full documentation](docs/actions/todo-to-issues.md) for details.
+See [full documentation](docs/todo-to-issues.md) for details.
