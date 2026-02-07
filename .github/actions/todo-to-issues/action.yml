@@ -27,6 +27,7 @@ runs:
         fi
 
     - name: Process TODO file
+      id: process-todos
       if: steps.check-todo.outputs.exists == 'true'
       shell: bash
       env:
@@ -35,20 +36,20 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
         echo "Processing TODO file: $TODO_FILE"
-        
+
         # Function to create a GitHub issue
         create_issue() {
           local title="$1"
           local body="$2"
-          
+
           echo "Creating issue: $title"
-          
-          # Create JSON payload
+
+          # Create JSON payload with TODO.md label
           JSON_PAYLOAD=$(jq -n \
             --arg title "$title" \
             --arg body "$body" \
-            '{title: $title, body: $body}')
-          
+            '{title: $title, body: $body, labels: ["TODO.md"]}')
+
           # Create issue via GitHub API
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
@@ -56,10 +57,10 @@ runs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/issues" \
             -d "$JSON_PAYLOAD")
-          
+
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
-          
+
           if [ "$HTTP_CODE" -eq 201 ]; then
             ISSUE_NUMBER=$(echo "$RESPONSE_BODY" | jq -r '.number')
             echo "✓ Created issue #$ISSUE_NUMBER: $title"
@@ -70,33 +71,54 @@ runs:
             return 1
           fi
         }
-        
+
+        # Ensure the TODO.md label exists
+        echo "Ensuring TODO.md label exists..."
+        LABEL_PAYLOAD=$(jq -n '{name: "TODO.md", color: "1d76db", description: "Created from TODO.md"}')
+        curl -s -o /dev/null -w "" \
+          -X POST \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/$GITHUB_REPOSITORY/labels" \
+          -d "$LABEL_PAYLOAD" || true
+
         ISSUE_COUNT=0
         current_title=""
         current_body=""
-        
+
         # Process the TODO file line by line
         while IFS= read -r line || [ -n "$line" ]; do
+          # Match ## headers (with optional body below)
           if [[ "$line" =~ ^"## " ]]; then
-            # Found a new title - process previous issue if exists
+            # Flush previous issue if exists
             if [ -n "$current_title" ]; then
               if create_issue "$current_title" "$current_body"; then
                 ISSUE_COUNT=$((ISSUE_COUNT + 1))
               fi
             fi
-            
-            # Start new issue (remove '## ' prefix)
             current_title="${line#"## "}"
             current_body=""
+          # Match bullet points: - [ ] item or - item
+          elif [[ "$line" =~ ^"- [ ] " ]] || [[ "$line" =~ ^"- " && ! "$line" =~ ^"- [x] " ]]; then
+            # Flush previous issue if exists
+            if [ -n "$current_title" ]; then
+              if create_issue "$current_title" "$current_body"; then
+                ISSUE_COUNT=$((ISSUE_COUNT + 1))
+              fi
+            fi
+            # Strip the bullet prefix
+            local_title="$line"
+            local_title="${local_title#"- [ ] "}"
+            local_title="${local_title#"- "}"
+            current_title="$local_title"
+            current_body=""
           elif [ -n "$current_title" ]; then
-            # Accumulate body lines
+            # Accumulate body lines (only applies to ## header mode)
             if [ -z "$line" ]; then
-              # Blank line
               if [ -n "$current_body" ]; then
                 current_body="${current_body}"$'\n'
               fi
             else
-              # Content line
               if [ -n "$current_body" ]; then
                 current_body="${current_body}"$'\n'"$line"
               else
@@ -105,19 +127,20 @@ runs:
             fi
           fi
         done < "$TODO_FILE"
-        
-        # Process last issue
+
+        # Flush last issue
         if [ -n "$current_title" ]; then
           if create_issue "$current_title" "$current_body"; then
             ISSUE_COUNT=$((ISSUE_COUNT + 1))
           fi
         fi
-        
+
         echo ""
         echo "Total issues created: $ISSUE_COUNT"
+        echo "issue_count=$ISSUE_COUNT" >> $GITHUB_OUTPUT
 
     - name: Delete TODO file
-      if: steps.check-todo.outputs.exists == 'true'
+      if: steps.check-todo.outputs.exists == 'true' && steps.process-todos.outputs.issue_count != '0'
       shell: bash
       run: |
         echo "Deleting TODO file: ${{ inputs.todo-file }}"
