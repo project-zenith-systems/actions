@@ -1,0 +1,20 @@
+name: Copilot Auto Approve
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Auto approve if Copilot finds no issues
+        uses: ./.github/actions/copilot-auto-approve
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
