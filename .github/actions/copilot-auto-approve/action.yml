@@ -30,6 +30,12 @@ runs:
           exit 0
         fi
 
+        # Check if the review state is 'commented' (Copilot always leaves a comment review, not approve/reject)
+        if [[ "$REVIEW_STATE" != "commented" ]]; then
+          echo "Review state is not 'commented' (state: $REVIEW_STATE), skipping..."
+          exit 0
+        fi
+
         # Check if the review body indicates 0 comments were generated
         # This pattern matches GitHub Copilot's standard review message format.
         # The message is typically: "GitHub Copilot code review generated 0 comments."
@@ -42,15 +48,30 @@ runs:
         echo "Copilot code review generated 0 comments. Approving PR #$PR_NUMBER..."
 
         # Approve the PR via GitHub API
+        set +e
         RESPONSE=$(curl -s -w "\n%{http_code}" \
           -X POST \
           -H "Authorization: Bearer $GITHUB_TOKEN" \
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
           -d '{"event": "APPROVE", "body": "Automatically approved: Copilot code review generated 0 comments."}')
+        CURL_EXIT_CODE=$?
+        set -e
+
+        if [ $CURL_EXIT_CODE -ne 0 ]; then
+          echo "✗ Failed to call GitHub API (curl exit code: $CURL_EXIT_CODE)"
+          exit 1
+        fi
 
         HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
         RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+        # Validate HTTP_CODE is a number before comparison
+        if ! [[ "$HTTP_CODE" =~ ^[0-9]+$ ]]; then
+          echo "✗ Invalid HTTP response code: $HTTP_CODE"
+          echo "$RESPONSE_BODY"
+          exit 1
+        fi
 
         if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 201 ]; then
           echo "✓ PR #$PR_NUMBER has been approved"
