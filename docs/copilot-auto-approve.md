@@ -39,6 +39,7 @@ jobs:
   auto-approve:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     
     steps:
