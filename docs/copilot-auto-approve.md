@@ -39,13 +39,9 @@ jobs:
   auto-approve:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: write
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Auto approve if Copilot finds no issues
         uses: project-zenith-systems/actions/.github/actions/copilot-auto-approve@main
         with:

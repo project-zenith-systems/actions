@@ -75,6 +75,11 @@ runs:
 
         if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 201 ]; then
           echo "✓ PR #$PR_NUMBER has been approved"
+        elif [ "$HTTP_CODE" -eq 403 ] || [ "$HTTP_CODE" -eq 404 ]; then
+          echo "⚠ Cannot approve PR #$PR_NUMBER (HTTP $HTTP_CODE) - this may be expected for PRs from forks or restricted token permissions"
+          echo "$RESPONSE_BODY"
+          echo "Skipping approval (non-fatal)..."
+          exit 0
         else
           echo "✗ Failed to approve PR #$PR_NUMBER (HTTP $HTTP_CODE)"
           echo "$RESPONSE_BODY"
