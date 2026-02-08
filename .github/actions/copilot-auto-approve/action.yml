@@ -23,7 +23,6 @@ runs:
       run: |
         echo "Review by: $REVIEW_USER"
         echo "Review state: $REVIEW_STATE"
-        echo "Review body: $REVIEW_BODY"
 
         # Check if the review is from GitHub Copilot
         if [[ "$REVIEW_USER" != "copilot-pull-request-reviewer[bot]" ]]; then
