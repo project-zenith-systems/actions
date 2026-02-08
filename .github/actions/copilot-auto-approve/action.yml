@@ -48,15 +48,14 @@ runs:
         echo "Copilot code review generated 0 comments. Approving PR #$PR_NUMBER..."
 
         # Approve the PR via GitHub API
-        set +e
+        # Use || true to capture exit code without failing the script
         RESPONSE=$(curl -s -w "\n%{http_code}" \
           -X POST \
           -H "Authorization: Bearer $GITHUB_TOKEN" \
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
-          -d '{"event": "APPROVE", "body": "Automatically approved: Copilot code review generated 0 comments."}')
-        CURL_EXIT_CODE=$?
-        set -e
+          -d '{"event": "APPROVE", "body": "Automatically approved: Copilot code review generated 0 comments."}') || CURL_EXIT_CODE=$?
+        CURL_EXIT_CODE=${CURL_EXIT_CODE:-0}
 
         if [ $CURL_EXIT_CODE -ne 0 ]; then
           echo "✗ Failed to call GitHub API (curl exit code: $CURL_EXIT_CODE)"
