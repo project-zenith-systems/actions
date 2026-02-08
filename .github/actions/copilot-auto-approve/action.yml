@@ -48,7 +48,7 @@ runs:
         echo "Copilot code review generated 0 comments. Approving PR #$PR_NUMBER..."
 
         # Approve the PR via GitHub API
-        # Use || true to capture exit code without failing the script
+        # Capture curl exit code into CURL_EXIT_CODE without immediately failing the script
         RESPONSE=$(curl -s -w "\n%{http_code}" \
           -X POST \
           -H "Authorization: Bearer $GITHUB_TOKEN" \
