@@ -32,7 +32,10 @@ runs:
         fi
 
         # Check if the review body indicates 0 comments were generated
-        if [[ "$REVIEW_BODY" != *"generated 0 comments"* ]]; then
+        # This pattern matches GitHub Copilot's standard review message format.
+        # The message is typically: "GitHub Copilot code review generated 0 comments."
+        # Using a partial match to be resilient to minor variations in punctuation or casing.
+        if [[ "${REVIEW_BODY,,}" != *"generated 0 comments"* ]]; then
           echo "Copilot review did not generate 0 comments, skipping..."
           exit 0
         fi
