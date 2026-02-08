@@ -52,12 +52,13 @@ jobs:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `github-token` | GitHub token for approving PRs | Yes | `${{ github.token }}` |
+| `github-token` | GitHub token (for example, `secrets.GITHUB_TOKEN`, a PAT, or a GitHub App token) used to approve PRs | Yes | `${{ github.token }}` |
 
 ## Notes
 
 - The action only triggers on `pull_request_review` events with the `submitted` type
-- A GitHub token with `pull-requests: write` permission is required
+- A GitHub token with `pull-requests: write` permission is required, and your repository/organization must allow GitHub Actions to create and approve pull requests.
+- If the workflow fails with `403 Resource not accessible by integration`, ensure that setting is enabled or provide a PAT/GitHub App token with `pull_requests: write` scope via the `github-token` input.
 - The approval message includes context about why the PR was approved
 - Reviews from users other than Copilot are ignored
 - Reviews with comments (not 0) are also ignored
