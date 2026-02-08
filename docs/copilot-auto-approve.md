@@ -19,8 +19,9 @@ GitHub Copilot code review generated 0 comments.
 
 This action listens for pull request review events and:
 1. Checks if the reviewer is `copilot-pull-request-reviewer[bot]`
-2. Checks if the review body contains "generated 0 comments"
-3. If both conditions are met, automatically approves the PR
+2. Checks if the review state is `commented` (Copilot's standard review type)
+3. Checks if the review body contains "generated 0 comments"
+4. If all conditions are met, automatically approves the PR
 
 ## Usage
 
