@@ -58,7 +58,7 @@ jobs:
 
 - The action only triggers on `pull_request_review` events with the `submitted` type
 - A GitHub token with `pull-requests: write` permission is required, and your repository/organization must allow GitHub Actions to create and approve pull requests.
-- If the workflow fails with `403 Resource not accessible by integration`, ensure that setting is enabled or provide a PAT/GitHub App token with `pull_requests: write` scope via the `github-token` input.
+- If the workflow fails with `403 Resource not accessible by integration`, ensure that setting is enabled or provide a PAT/GitHub App token with appropriate pull request write permissions (for example, the "Pull requests: write" permission) via the `github-token` input.
 - The approval message includes context about why the PR was approved
 - Reviews from users other than Copilot are ignored
 - Reviews with comments (not 0) are also ignored
