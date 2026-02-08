@@ -1,0 +1,63 @@
+name: 'Copilot Auto Approve'
+description: 'Automatically approves PRs when GitHub Copilot code review generates 0 comments'
+author: 'Project Zenith Systems'
+
+inputs:
+  github-token:
+    description: 'GitHub token for approving PRs'
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Copilot review and approve PR
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REVIEW_BODY: ${{ github.event.review.body }}
+        REVIEW_USER: ${{ github.event.review.user.login }}
+        REVIEW_STATE: ${{ github.event.review.state }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        echo "Review by: $REVIEW_USER"
+        echo "Review state: $REVIEW_STATE"
+        echo "Review body: $REVIEW_BODY"
+
+        # Check if the review is from GitHub Copilot
+        if [[ "$REVIEW_USER" != "copilot-pull-request-reviewer[bot]" ]]; then
+          echo "Review is not from Copilot (user: $REVIEW_USER), skipping..."
+          exit 0
+        fi
+
+        # Check if the review body indicates 0 comments were generated
+        if [[ "$REVIEW_BODY" != *"generated 0 comments"* ]]; then
+          echo "Copilot review did not generate 0 comments, skipping..."
+          exit 0
+        fi
+
+        echo "Copilot code review generated 0 comments. Approving PR #$PR_NUMBER..."
+
+        # Approve the PR via GitHub API
+        RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+          -d '{"event": "APPROVE", "body": "Automatically approved: Copilot code review generated 0 comments."}')
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+        if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 201 ]; then
+          echo "✓ PR #$PR_NUMBER has been approved"
+        else
+          echo "✗ Failed to approve PR #$PR_NUMBER (HTTP $HTTP_CODE)"
+          echo "$RESPONSE_BODY"
+          exit 1
+        fi
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
