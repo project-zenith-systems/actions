@@ -85,6 +85,7 @@ runs:
         ISSUE_COUNT=0
         current_title=""
         current_body=""
+        in_header=false
 
         # Process the TODO file line by line
         while IFS= read -r line || [ -n "$line" ]; do
@@ -98,22 +99,34 @@ runs:
             fi
             current_title="${line#"## "}"
             current_body=""
-          # Match bullet points: - [ ] item or - item
+            in_header=true
+          # Match bullet points: - [ ] item or - item (skip completed - [x] items)
           elif [[ "$line" =~ ^"- [ ] " ]] || [[ "$line" =~ ^"- " && ! "$line" =~ ^"- [x] " ]]; then
-            # Flush previous issue if exists
-            if [ -n "$current_title" ]; then
-              if create_issue "$current_title" "$current_body"; then
-                ISSUE_COUNT=$((ISSUE_COUNT + 1))
+            if [ "$in_header" = true ]; then
+              # Under a ## header: accumulate bullet as body text
+              if [ -n "$current_body" ]; then
+                current_body="${current_body}"$'\n'"$line"
+              else
+                current_body="$line"
               fi
+            else
+              # Standalone bullet: flush previous and create its own issue
+              if [ -n "$current_title" ]; then
+                if create_issue "$current_title" "$current_body"; then
+                  ISSUE_COUNT=$((ISSUE_COUNT + 1))
+                fi
+              fi
+              local_title="$line"
+              local_title="${local_title#"- [ ] "}"
+              local_title="${local_title#"- "}"
+              current_title="$local_title"
+              current_body=""
             fi
-            # Strip the bullet prefix
-            local_title="$line"
-            local_title="${local_title#"- [ ] "}"
-            local_title="${local_title#"- "}"
-            current_title="$local_title"
-            current_body=""
+          # Skip completed bullet points
+          elif [[ "$line" =~ ^"- [x] " ]]; then
+            :
           elif [ -n "$current_title" ]; then
-            # Accumulate body lines (only applies to ## header mode)
+            # Accumulate body lines
             if [ -z "$line" ]; then
               if [ -n "$current_body" ]; then
                 current_body="${current_body}"$'\n'

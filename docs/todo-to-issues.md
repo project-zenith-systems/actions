@@ -12,7 +12,7 @@ Automatically creates GitHub issues from a `TODO.md` file when pushed to the mai
 
 ## TODO.md Format
 
-The format is simple and intuitive:
+The format supports both headlines and bullet points:
 
 ```markdown
 ## Issue Title
@@ -24,10 +24,25 @@ Can span multiple lines.
 
 Another optional description.
 
+## Issue With Sub-tasks
+
+- [ ] First sub-task
+- [ ] Second sub-task
+- Bullet without checkbox
+
 ## Issue Without Description
+
+- [ ] Standalone bullet (becomes its own issue)
+- [x] Completed item (skipped)
 ```
 
-Each TODO item starts with `## ` followed by the title. Any text between the title and the next `## ` is treated as the issue description (optional).
+### Headlines (`## `)
+
+Each `## ` heading becomes an issue title. Any text between it and the next heading is the issue body. Bullet points under a headline are included in that issue's body rather than creating separate issues.
+
+### Bullet points (`- [ ] ` or `- `)
+
+Standalone bullet points (not under a `## ` heading) each create their own issue. Completed items (`- [x] `) are always skipped.
 
 ## Usage
 
@@ -103,15 +118,19 @@ This will create 3 issues with the titles and descriptions as specified.
 
 1. When you push a TODO.md file to the main branch
 2. The workflow triggers and checks for the TODO.md file
-3. It parses the file looking for `## ` headings as issue titles
-4. Text between headings becomes the issue description (optional)
-5. Issues are created via the GitHub API
-6. The TODO.md file is deleted with a commit
-7. Concurrency control prevents duplicate runs
+3. It parses the file looking for `## ` headings and bullet points
+4. Bullet points under a heading are included in that heading's issue body
+5. Standalone bullet points (not under a heading) create their own issues
+6. Completed items (`- [x]`) are skipped
+7. All issues are labeled with `TODO.md`
+8. Issues are created via the GitHub API
+9. The TODO.md file is deleted with a commit
+10. Concurrency control prevents duplicate runs
 
 ## Notes
 
-- The action uses a simple `## Title` format for ease of use
+- The action uses `## Title` for issues with descriptions and `- [ ] Item` for quick items
+- Bullet points under a `## ` heading become part of that heading's issue body
 - Descriptions are optional and can include blank lines, special characters, etc.
 - The TODO.md file is automatically deleted after processing
 - Concurrency control prevents race conditions and duplicate issues
